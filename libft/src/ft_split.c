@@ -6,7 +6,7 @@
 /*   By: soutin <soutin@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/05/07 17:07:39 by soutin            #+#    #+#             */
-/*   Updated: 2023/09/22 17:14:03 by soutin           ###   ########.fr       */
+/*   Updated: 2023/09/24 19:42:07 by soutin           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -83,7 +83,7 @@ char	**ft_split(char const *s, char c)
 		return (NULL);
 	nb_strs = nb_str((char *)s, c);
 	start = 0;
-	strs = (char **)malloc(sizeof(char *) * (nb_strs + 1));
+	strs = (char **)ft_calloc(nb_strs + 1, sizeof(char *));
 	if (!strs)
 		return (NULL);
 	while (nb_strs--)

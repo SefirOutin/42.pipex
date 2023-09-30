@@ -6,7 +6,7 @@
 /*   By: soutin <soutin@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/05/24 19:07:50 by soutin            #+#    #+#             */
-/*   Updated: 2023/09/22 18:26:37 by soutin           ###   ########.fr       */
+/*   Updated: 2023/09/27 17:08:46 by soutin           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -32,11 +32,10 @@ static char	*ft_join(char *line, char *buffer)
 	{
 		ft_strlcpy(new, line, ft_strlen(line));
 		ft_strlcat(new, buffer, len);
+		free(line);
 	}
 	else
 		ft_strlcpy(new, buffer, len);
-	if (line)
-		free(line);
 	return (new);
 }
 
@@ -76,7 +75,6 @@ static void	trim_buffer(char *buffer, long nb)
 
 	l = 0;
 	i = 0;
-	(void)nb;
 	if (!buffer)
 		return ;
 	while (buffer[i] != '\n' && buffer[i])
@@ -92,31 +90,29 @@ static void	trim_buffer(char *buffer, long nb)
 
 char	*get_next_line(int fd)
 {
-	char		*line;
+	t_gnl		vars;
 	static char	buffer[BUFFER_SIZE + 1];
-	long		nb_bytes;
 
-	nb_bytes = 1;
+	vars.nb_bytes = 1;
 	if (fd < 0 || read(fd, buffer, 0) < 0 || BUFFER_SIZE <= 0)
 		return (NULL);
-	line = ft_join(NULL, buffer);
-	if (!line)
+	vars.line = ft_join(NULL, buffer);
+	if (!vars.line)
 		return (NULL);
-	while (!in_line(line))
+	while (!in_line(vars.line))
 	{
-			nb_bytes = read(fd, buffer, BUFFER_SIZE);
-			buffer[nb_bytes] = '\0';
-		if (!nb_bytes)
+		vars.nb_bytes = read(fd, buffer, BUFFER_SIZE);
+		buffer[vars.nb_bytes] = '\0';
+		if (!vars.nb_bytes)
 			break ;
-		if (nb_bytes < 0)
-			return (free(line), NULL);
-		line = ft_join(line, buffer);
-		if (!line)
+		if (vars.nb_bytes < 0)
+			return (free(vars.line), NULL);
+		vars.line = ft_join(vars.line, buffer);
+		if (!vars.line)
 			return (NULL);
 	}
-	trim_line(line);
-	if (!line[0])
-		return (free(line), NULL);
-	trim_buffer(buffer, nb_bytes);
-	return (line);
+	trim_line(vars.line);
+	if (!vars.line[0])
+		return (free(vars.line), NULL);
+	return (trim_buffer(buffer, vars.nb_bytes), vars.line);
 }

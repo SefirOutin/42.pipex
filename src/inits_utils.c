@@ -6,48 +6,13 @@
 /*   By: soutin <soutin@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/09/18 22:52:15 by soutin            #+#    #+#             */
-/*   Updated: 2023/09/22 17:10:31 by soutin           ###   ########.fr       */
+/*   Updated: 2023/09/28 23:32:34 by soutin           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "../include/pipex.h"
 
-int	mallocs(t_vars *vars)
-{
-	vars->argvs = (char ***)ft_calloc(sizeof(char **), (vars->ac - 2));
-	if (!vars->argvs)
-		return (perror("calloc argvs"), -1);
-	vars->cmd_path = (char **)ft_calloc(sizeof(char *), (vars->ac - 2));
-	if (!vars->cmd_path)
-		return (perror("calloc cmdp"), -1);
-	return (0);
-}
-
-int	path_to_argv(char **argv)
-{
-	char	**tmp;
-	int		i;
-
-	i = 0;
-	if (!access(argv[0], F_OK | X_OK))
-	{
-		tmp = ft_split(argv[0], '/');
-		if (!tmp)
-			return (perror("split"), -1);
-		while (tmp[i + 1])
-			i++;
-		free(argv[0]);
-		argv[0] = ft_substr(tmp[i], 0, ft_strlen(tmp[i]));
-		if (!argv[0])
-			return (-1);
-		freetabs(tmp);
-		return (0);
-	}
-	else
-		return (0);
-}
-
-char	**init_path(char **envp)
+char	**init_paths(char **envp)
 {
 	int		i;
 	char	*tmp;
@@ -85,4 +50,64 @@ char	*cmdjoin(char *path, char *cmd)
 		return (free(tmp), NULL);
 	free(tmp);
 	return (new);
+}
+
+int	init_vars(t_vars *vars, int ac, char **av, char **envp)
+{
+	vars->ac = ac;
+	vars->av = av;
+	vars->fdi = -2;
+	vars->fdo = -2;
+	vars->limiter = NULL;
+	vars->argv = NULL;
+	vars->cmd_path = NULL;
+	vars->envp_path = NULL;
+	vars->envp = envp;
+	if (!ft_strncmp(av[1], "here_doc", 8))
+	{
+		vars->nb_cmds = ac - 4;
+		vars->limiter = av[2];
+	}
+	else
+		vars->nb_cmds = ac - 3;
+	vars->envp_path = init_paths(envp);
+	if (!vars->envp_path)
+		return (-1);
+	return (0);
+}
+
+void	freetabs(char **tab)
+{
+	int	i;
+
+	i = 0;
+	while (tab[i])
+	{
+		free(tab[i]);
+		i++;
+	}
+	free(tab);
+}
+
+void	freevars(t_vars *vars, int i)
+{
+	if (!ft_strncmp(vars->av[1], "here_doc", 8))
+		unlink("here_doc");
+	if (vars->envp_path)
+		freetabs(vars->envp_path);
+	if (vars->argv)
+		freetabs(vars->argv);
+	if (vars->cmd_path)
+		free(vars->cmd_path);
+	if (vars->fdi >= 0)
+		close(vars->fdi);
+	if (vars->fdo >= 0)
+		close(vars->fdo);
+	if (i >= 0)
+	{
+		close(vars->pipe_fd[1]);
+		close(vars->pipe_fd[0]);
+	}
+	if (i != 0)
+		close(vars->tmp_fd);
 }

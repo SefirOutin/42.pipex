@@ -6,79 +6,103 @@
 /*   By: soutin <soutin@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/09/12 15:13:52 by soutin            #+#    #+#             */
-/*   Updated: 2023/09/22 18:28:39 by soutin           ###   ########.fr       */
+/*   Updated: 2023/09/28 22:58:04 by soutin           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "../include/pipex.h"
 
-int	wait_childs(t_vars *vars)
+int	tough_choices(t_vars *vars, int i)
 {
-	int	i;
-	int	status;
-
-	i = 0;
-	while (i < vars->nb_steps)
+	if (i == 0)
 	{
-		if (waitpid(vars->pids[i], &status, 0) < 0)
-			return (-1);
-		i++;
+		if (dup2(vars->fdi, STDIN_FILENO) < 0)
+			return (freevars(vars, i), -1);
+		if (close(vars->fdi) < 0)
+			return (freevars(vars, i), -1);
+	}
+	if (i != 0)
+	{
+		if (dup2(vars->tmp_fd, STDIN_FILENO) < 0)
+			return (freevars(vars, i), -1);
+		if (close(vars->tmp_fd) < 0)
+			return (freevars(vars, i), -1);
+	}
+	if (i != vars->nb_cmds - 1)
+		if (dup2(vars->pipe_fd[1], STDOUT_FILENO) < 0)
+			return (freevars(vars, i), -1);
+	if (i == vars->nb_cmds - 1 && vars->fdo != -2)
+	{
+		if (dup2(vars->fdo, STDOUT_FILENO) < 0)
+			return (freevars(vars, i), -1);
+		if (close(vars->fdo) < 0)
+			return (freevars(vars, i), -1);
 	}
 	return (0);
 }
 
-int	in_out_pipe(t_vars *vars, int i)
+void	in_out_pipe(t_vars *vars, int i)
 {
-	if (i == 0)
-		if (dup2(vars->fdi, STDIN_FILENO) < 0)
-			return (perror("dup2"), -1);
-	if (i != 0)
-		if (dup2(vars->tmp_fd, STDIN_FILENO) < 0)
-			return (perror("dup2"), -1);
-	if (i != vars->nb_steps - 1)
-		if (dup2(vars->pipe_fd[1], STDOUT_FILENO) < 0)
-			return (perror("dup2"), -1);
-	if (i == vars->nb_steps - 1)
-		if (dup2(vars->fdo, STDOUT_FILENO) < 0)
-			return (perror("dup2"), -1);
-	if (close(vars->pipe_fd[0]) < 0)
-		return (perror("close"), -1);
-	if (close(vars->pipe_fd[1]) < 0)
-		return (perror("close"), -1);
-	if (execve(vars->cmd_path[i], vars->argvs[i], vars->envp) < 0)
-		return (perror("execve"), -1);
-	return (0);
+	if (init_cmd_and_files(vars, vars->av, i) < 0)
+		exit(1);
+	if (tough_choices(vars, i) < 0)
+		exit(1);
+	if (close(vars->pipe_fd[1]) < 0 || close(vars->pipe_fd[0]) < 0)
+	{
+		freevars(vars, -1);
+		exit(1);
+	}
+	if (execve(vars->cmd_path, vars->argv, vars->envp) < 0)
+	{
+		freevars(vars, i);
+		exit(1);
+	}
 }
 
 int	exec_pipeline(t_vars *vars)
 {
-	int	i;
-	int	status;
+	int		i;
+	int		status;
+	pid_t	pid;
 
 	i = 0;
-	while (i < vars->nb_steps)
+	while (i < vars->nb_cmds)
 	{
 		if (pipe(vars->pipe_fd) < 0)
 			return (perror("pipe"), -1);
-		vars->pids[i] = fork();
-		if (vars->pids[i] < 0)
+		pid = fork();
+		if (pid < 0)
 			return (perror("Fork"), -1);
-		if (!vars->pids[i])
-		{
-			if (in_out_pipe(vars, i) < 0)
-				return (-1);
-		}
-		else
-			if (waitpid(vars->pids[i], &status, 0) < 0)
-				return (-1);
+		if (!pid)
+			in_out_pipe(vars, i);
+		if (waitpid(pid, &status, 0) < 0)
+			return (-1);
 		if (close(vars->pipe_fd[1]) < 0)
 			return (-1);
+		if (i != 0)
+			close(vars->tmp_fd);
 		vars->tmp_fd = vars->pipe_fd[0];
 		i++;
 	}
-	if (close(vars->tmp_fd) < 0)
-		return (-1);
-	// if (wait_childs(vars) < 0)
-	// 	return (-1);
+	close(vars->tmp_fd);
+	return (0);
+}
+
+int	main(int ac, char **av, char **envp)
+{
+	t_vars	vars;
+
+	if (ac >= 5 && ac <= 1027)
+	{
+		if (init_vars(&vars, ac, av, envp) < 0)
+			return (-1);
+		exec_pipeline(&vars);
+		freetabs(vars.envp_path);
+		if (vars.limiter)
+			unlink("here_doc");
+		close(vars.pipe_fd[0]);
+	}
+	else
+		ft_printf("parse error near `|\' ");
 	return (0);
 }

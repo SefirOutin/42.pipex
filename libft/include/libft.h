@@ -6,7 +6,7 @@
 /*   By: soutin <soutin@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/05/04 16:52:51 by soutin            #+#    #+#             */
-/*   Updated: 2023/06/15 15:00:03 by soutin           ###   ########.fr       */
+/*   Updated: 2023/09/27 17:07:34 by soutin           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -33,6 +33,12 @@ typedef struct s_list
 	void			*content;
 	struct s_list	*next;
 }					t_list;
+
+typedef struct s_gnl
+{
+	char			*line;
+	long			nb_bytes;
+}					t_gnl;
 
 int					ft_isalpha(int c);
 int					ft_isdigit(int c);

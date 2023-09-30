@@ -6,7 +6,7 @@
 /*   By: soutin <soutin@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/08/23 19:41:00 by soutin            #+#    #+#             */
-/*   Updated: 2023/09/22 17:32:20 by soutin           ###   ########.fr       */
+/*   Updated: 2023/09/28 23:14:50 by soutin           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -23,40 +23,34 @@
 
 typedef struct s_vars
 {
+	int		ac;
+	char	**av;
 	int		fdi;
 	int		fdo;
+	int		nb_cmds;
 	char	*limiter;
-	int		ac;
-	int		error;
 	int		pipe_fd[2];
 	int		tmp_fd;
 	char	**envp;
 	char	**envp_path;
-	int		pids[1024];
-	int		nb_steps;
-	char	**cmd_path;
-	char	***argvs;
+	char	*cmd_path;
+	char	**argv;
 }			t_vars;
 
-int			parse(t_vars *vars, int ac, char **av);
-char		**init_path(char **envp);
-int			init_vars(t_vars *vars, int ac);
-int			init_cmd(t_vars *vars, char **av);
-int			init_cmd_path(t_vars *vars, int index);
-int			openfiles(t_vars *vars, char **av);
-int			mallocs(t_vars *vars);
+int			init_vars(t_vars *vars, int ac, char **av, char **envp);
+char		**init_paths(char **envp);
+int			init_cmd_and_files(t_vars *vars, char **av, int i);
+int			openfile(t_vars *vars, char **av, int i);
+int			init_cmd_path(t_vars *vars);
 int			path_to_argv(char **argv);
 int			here_doc_loop(t_vars *vars);
-
-int			exec_pipeline(t_vars *vars);
-
-int			cmd_process(t_vars *vars, char **argv);
-
 char		*cmdjoin(char *path, char *cmd);
 
-void		freevars(t_vars *vars);
+int			exec_pipeline(t_vars *vars);
+void		in_out_pipe(t_vars *vars, int i);
+int			tough_choices(t_vars *vars, int i);
+
+void		freevars(t_vars *vars, int i);
 void		freetabs(char **tab);
-void		tabs_print(char ***tab);
-void		tab_print(char **tab);
 
 #endif
