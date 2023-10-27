@@ -6,7 +6,7 @@
 /*   By: soutin <soutin@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/09/12 15:13:52 by soutin            #+#    #+#             */
-/*   Updated: 2023/09/28 22:58:04 by soutin           ###   ########.fr       */
+/*   Updated: 2023/10/27 02:56:23 by soutin           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -59,24 +59,35 @@ void	in_out_pipe(t_vars *vars, int i)
 	}
 }
 
+int	waitchilds(t_vars *vars)
+{
+	int	i;
+	int	status;
+
+	i = 0;
+	while (i < vars->nb_cmds)
+	{
+		if (waitpid(vars->pid[i], &status, 0) < 0)
+			return (-1);
+		i++;
+	}
+	return (0);
+}
+
 int	exec_pipeline(t_vars *vars)
 {
 	int		i;
-	int		status;
-	pid_t	pid;
 
 	i = 0;
 	while (i < vars->nb_cmds)
 	{
 		if (pipe(vars->pipe_fd) < 0)
 			return (perror("pipe"), -1);
-		pid = fork();
-		if (pid < 0)
+		vars->pid[i] = fork();
+		if (vars->pid[i] < 0)
 			return (perror("Fork"), -1);
-		if (!pid)
+		if (!vars->pid[i])
 			in_out_pipe(vars, i);
-		if (waitpid(pid, &status, 0) < 0)
-			return (-1);
 		if (close(vars->pipe_fd[1]) < 0)
 			return (-1);
 		if (i != 0)
@@ -84,6 +95,8 @@ int	exec_pipeline(t_vars *vars)
 		vars->tmp_fd = vars->pipe_fd[0];
 		i++;
 	}
+	if (waitchilds(vars) < 0)
+		return (-1);
 	close(vars->tmp_fd);
 	return (0);
 }
@@ -95,8 +108,9 @@ int	main(int ac, char **av, char **envp)
 	if (ac >= 5 && ac <= 1027)
 	{
 		if (init_vars(&vars, ac, av, envp) < 0)
-			return (-1);
-		exec_pipeline(&vars);
+			return (1);
+		if (exec_pipeline(&vars) < 0)
+			return (1);
 		freetabs(vars.envp_path);
 		if (vars.limiter)
 			unlink("here_doc");

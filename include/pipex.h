@@ -6,7 +6,7 @@
 /*   By: soutin <soutin@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/08/23 19:41:00 by soutin            #+#    #+#             */
-/*   Updated: 2023/09/28 23:14:50 by soutin           ###   ########.fr       */
+/*   Updated: 2023/10/27 02:54:45 by soutin           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -30,6 +30,7 @@ typedef struct s_vars
 	int		nb_cmds;
 	char	*limiter;
 	int		pipe_fd[2];
+	int		pid[1024];
 	int		tmp_fd;
 	char	**envp;
 	char	**envp_path;
